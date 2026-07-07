@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('peserta_kelas', function (Blueprint $table) {
+            $table->id();
             $table->foreignId('kelas_id')->constrained('kelas_mq')->cascadeOnDelete();
             $table->foreignId('mahasiswa_id')->constrained('mahasiswa')->cascadeOnDelete();
             $table->timestamps();
