@@ -28,7 +28,7 @@ class SertifikatController extends Controller
         // (Menggunakan with('kelas') agar nama kelas/tingkat ikut terbawa ke React JS)
         $nilai = NilaiAkhir::with('kelas')
                            ->where('mahasiswa_id', $mhs->id)
-                           ->where('status_validasi', 'Disahkan Pusat')
+                           ->where('status_validasi', 2)
                            ->latest()
                            ->first();
 
@@ -40,7 +40,7 @@ class SertifikatController extends Controller
         }
 
         // Siapkan pesan kelulusan yang dinamis
-        $pesanKelulusan = $nilai->status_kelulusan 
+        $pesanKelulusan = ($nilai->status_kelulusan === 'Lulus')
             ? "Selamat! Anda dinyatakan LULUS dengan predikat sangat baik." 
             : "Mohon maaf, Anda dinyatakan BELUM LULUS. Tetap semangat dan silakan mendaftar di periode berikutnya.";
 
@@ -48,7 +48,7 @@ class SertifikatController extends Controller
             'message' => 'Status kelulusan berhasil diambil.',
             'data'    => [
                 'kelas'            => $nilai->kelas->nama_kelas,
-                'total_poin'       => $nilai->total_poin,
+                'total_nilai'       => $nilai->total_poin,
                 'huruf_mutu'       => $nilai->huruf_mutu,
                 'status_kelulusan' => $nilai->status_kelulusan,
                 'pesan'            => $pesanKelulusan
@@ -62,7 +62,7 @@ class SertifikatController extends Controller
 
         // 1. Pengecekan Syarat Lulus
         $nilai = NilaiAkhir::where('mahasiswa_id', $mhs->id)
-                           ->where('status_validasi', 'Disahkan Pusat')
+                           ->where('status_validasi', 2)
                            ->latest()
                            ->first();
 

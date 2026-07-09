@@ -58,7 +58,7 @@ class AbsensiController extends Controller
             if ($request->filled('mahasiswa_id')) {
                 // Skenario 3: Tutor absenkan mahasiswa manual
                 $mahasiswaId = $request->mahasiswa_id;
-                $tutorId = $user->id; // Mencatat jejak bahwa Tutor yang menginput
+                $tutorId = $user->id; 
             } else {
                 // Skenario 2: Tutor absen mandiri (mencatat dirinya hadir mengajar)
                 $tutorId = $user->id;

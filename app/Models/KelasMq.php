@@ -13,6 +13,8 @@ class KelasMq extends Model
     protected $fillable = [
         'periode_id',
         'tutor_id',
+        'nama_kelas',
+        'jadwal',
         'tingkat',
         'kapasitas_jumlah',
     ];
@@ -56,4 +58,10 @@ class KelasMq extends Model
     {
         return $this->hasMany(NilaiAkhir::class, 'kelas_id');
     }
+
+    public function peserta()
+{
+    // Relasi Many-to-Many menggunakan tabel pivot 'peserta_kelas'
+    return $this->belongsToMany(Mahasiswa::class, 'peserta_kelas', 'kelas_id', 'mahasiswa_id');
+}
 }

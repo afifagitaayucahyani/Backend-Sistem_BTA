@@ -14,6 +14,7 @@ use App\Http\Controllers\NilaiController;
 use App\Http\Controllers\SertifikatController;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\MahasiswaController;
+use App\Http\Controllers\PeriodeAkademikController;
 
 
 Route::get('/user', function (Request $request) {
@@ -68,10 +69,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/admin/nilai/validasi-staff/{kelas_id}', [NilaiController::class, 'validasiTahapSatu']);
         Route::post('/admin/sertifikat/template', [SertifikatController::class, 'uploadTemplate']);
         Route::post('/admin/kelas', [KelasController::class, 'store']);
+        Route::post('/admin/kelas/{id}/tambah-peserta', [KelasController::class, 'tambahPeserta']);
         // data mahasiswa
         Route::get('/admin/mahasiswa', [MahasiswaController::class, 'index']);               
         Route::post('/admin/mahasiswa', [MahasiswaController::class, 'store']);         
         Route::delete('/admin/mahasiswa/{id}', [MahasiswaController::class, 'destroy']); 
+        // periode  akademik
+        Route::get('/admin/periode', [PeriodeAkademikController::class, 'index']);
+        Route::post('/admin/periode', [PeriodeAkademikController::class, 'store']);
+        // aktif periode
+        Route::patch('/admin/periode/{id}/set-active', [PeriodeAkademikController::class, 'setActive']);
     });
 
     // rute untuk admin dan kepala pusat

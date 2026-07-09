@@ -14,7 +14,9 @@ return new class extends Migration
         Schema::create('kelas_mq', function (Blueprint $table) {
             $table->id();
             $table->foreignId('periode_id')->constrained('periode_akademik')->restrictOnDelete();
-            $table->foreignId('tutor_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('tutor_id')->nullable()->constrained('users')->restrictOnDelete();
+            $table->string('nama_kelas', 100);
+            $table->string('jadwal', 100)->nullable();
             $table->enum('tingkat', ['Menegah', 'Mahir']);
             $table->unsignedInteger('kapasitas_jumlah');
             $table->timestamps();

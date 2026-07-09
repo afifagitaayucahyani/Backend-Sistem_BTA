@@ -13,7 +13,7 @@ class NilaiAkhir extends Model
     protected $fillable = [
         'kelas_id',
         'mahasiswa_id',
-        'nilai_total',
+        'total_nilai',
         'huruf_mutu',
         'status_validasi',
         'status_kelulusan',
@@ -24,9 +24,9 @@ class NilaiAkhir extends Model
     {
         return [
 
-            'nilai_total' => 'integer',
+            'total_nilai' => 'integer',
 
-            'status_validasi' => 'boolean',
+            'status_validasi' => 'integer',
         ];
 
     }

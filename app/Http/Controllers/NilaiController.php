@@ -44,7 +44,7 @@ class NilaiController extends Controller
             'data_nilai'                => 'required|array',
             'data_nilai.*.kelas_id'     => 'required|exists:kelas_mq,id',
             'data_nilai.*.mahasiswa_id' => 'required|exists:mahasiswa,id',
-            'data_nilai.*.total_poin'   => 'required|numeric|min:0|max:100',
+            'data_nilai.*.total_nilai'   => 'required|numeric|min:0|max:100',
         ]);
 
         if ($validator->fails()) {
@@ -54,7 +54,7 @@ class NilaiController extends Controller
         DB::beginTransaction();
         try {
             foreach ($request->data_nilai as $nilai) {
-                $poin = $nilai['total_poin'];
+                $poin = $nilai['total_nilai'];
                 
                 // SKALA HURUF MUTU 
                 if ($poin >= 85) {
@@ -75,10 +75,10 @@ class NilaiController extends Controller
                         'mahasiswa_id' => $nilai['mahasiswa_id'],
                     ],
                     [
-                        'total_poin'       => $poin,
+                        'total_nilai'       => $poin,
                         'huruf_mutu'       => $hurufMutu,
-                        'status_validasi'  => 'Pending',
-                        'status_kelulusan' => false // Belum ditentukan sampai disahkan pusat
+                        'status_validasi'  => 0,
+                        'status_kelulusan' => 'Lulus' 
                     ]
                 );
             }
@@ -91,11 +91,46 @@ class NilaiController extends Controller
         }
     }
 
+    public function getAntreanValidasi()
+    {
+        // Mengelompokkan daftar nilai yang 'Pending' berdasarkan Kelas
+        // Agar Staff melihatnya per-kelas, bukan per-mahasiswa yang acak
+        $antrean = KelasMq::whereHas('nilaiAkhir', function($query) {
+            $query->where('status_validasi', 0);
+        })
+        ->withCount(['nilaiAkhir' => function($query) {
+            $query->where('status_validasi', 0);
+        }])
+        ->with('tutor:id,name')
+        ->get();
+
+        return response()->json([
+            'message' => 'Daftar antrean kelas yang menunggu validasi Staff berhasil diambil.',
+            'data'    => $antrean
+        ], 200);
+    }
+
+    public function validasiTahapSatu(Request $request, $kelas_id)
+    {
+        // Mengubah semua nilai berstatus 'Pending' di kelas tersebut menjadi 'Divalidasi Staff'
+        $updateCount = NilaiAkhir::where('kelas_id', $kelas_id)
+                                 ->where('status_validasi', 0)
+                                 ->update(['status_validasi' => 1]);
+
+        if ($updateCount == 0) {
+            return response()->json(['message' => 'Tidak ada nilai yang berstatus Pending di kelas ini.'], 404);
+        }
+
+        return response()->json([
+            'message' => "Berhasil memvalidasi tahap pertama untuk {$updateCount} data mahasiswa. Diteruskan ke Kepala Pusat."
+        ], 200);
+    }
+
     public function sahkanNilai(Request $request, $kelas_id)
     {
         $nilaiKelas = NilaiAkhir::with('mahasiswa.user')
                                 ->where('kelas_id', $kelas_id)
-                                ->where('status_validasi', 'Divalidasi Staff')
+                                ->where('status_validasi', 1)
                                 ->get();
 
         if ($nilaiKelas->isEmpty()) {
@@ -123,10 +158,10 @@ class NilaiController extends Controller
         DB::beginTransaction();
         try {
             foreach ($nilaiKelas as $nilai) {
-                $nilai->status_validasi = 'Disahkan Pusat';
+                $nilai->status_validasi = 2;
                 
-                if ($nilai->total_poin >= 69) {
-                    $nilai->status_kelulusan = true;
+                if ($nilai->total_nilai >= 69) {
+                    $nilai->status_kelulusan = 'Lulus';
                     $nilai->save();
 
                     $namaMahasiswa = $nilai->mahasiswa->user->name;
@@ -137,7 +172,7 @@ class NilaiController extends Controller
                         'nomor_sk'         => $nomorSkAktif,
                         'nama_mahasiswa'   => $namaMahasiswa,
                         'nim'              => $nimMahasiswa,
-                        'total_poin'       => $nilai->total_poin,
+                        'total_nilai'       => $nilai->total_poin,
                         'keterangan_huruf' => $nilai->huruf_mutu,
                         'template_base64'  => $base64Template
                     ];
@@ -158,13 +193,13 @@ class NilaiController extends Controller
                         ['mahasiswa_id' => $nilai->mahasiswa_id],
                         [
                             'nomor_sk'          => $nomorSkAktif, 
-                            'keterangan_nilai_total'    => $nilai->total_poin,
+                            'keterangan_nilai_total'    => $nilai->total_nilai,
                             'keterangan_huruf'          => $nilai->huruf_mutu,
                             'file_sertifikat'           => $jalurPenyimpanan,
                         ]
                     );
                 } else {
-                    $nilai->status_kelulusan = false;
+                    $nilai->status_kelulusan = 'Tidak Lulus';
                     $nilai->save();
                 }
             }

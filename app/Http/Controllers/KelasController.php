@@ -28,7 +28,7 @@ class KelasController extends Controller
         $validator = Validator::make($request->all(), [
             'nama_kelas' => 'required|string|max:100', 
             'tingkat'    => 'required|in:Menengah,Mahir', 
-            'kuota'      => 'required|integer|min:1|max:50',
+            'kapasitas_jumlah'=> 'required|integer|min:1|max:50',
             'periode_id' => 'required|exists:periode_akademik,id',
             'jadwal'     => 'nullable|string' 
         ]);
@@ -40,7 +40,7 @@ class KelasController extends Controller
         $kelas = KelasMq::create([
             'nama_kelas' => $request->nama_kelas,
             'tingkat'    => $request->tingkat,
-            'kuota'      => $request->kuota,
+            'kapasitas_jumlah'=> $request->kapasitas_jumlah,
             'periode_id' => $request->periode_id,
             'jadwal'     => $request->jadwal,
             
@@ -122,4 +122,65 @@ class KelasController extends Controller
             ]
         ], 200);
     }
+
+    public function tambahPeserta(Request $request, $id)
+{
+    // 1. Validasi input harus berupa array
+    $request->validate([
+        'mahasiswa_id'   => 'required|array',
+        'mahasiswa_id.*' => 'exists:mahasiswa,id' // Memastikan semua ID valid
+    ]);
+
+    // 2. Cari kelasnya
+    $kelas = KelasMq::findOrFail($id);
+
+    // 3. Hitung jumlah peserta saat ini menggunakan Model PesertaKelas
+    $jumlahPesertaSaatIni = PesertaKelas::where('kelas_id', $id)->count();
+    $jumlahPesertaBaru = count($request->mahasiswa_id);
+
+    // Cek sisa kapasitas
+    if (($jumlahPesertaSaatIni + $jumlahPesertaBaru) > $kelas->kapasitas_jumlah) {
+        return response()->json([
+            'message' => 'Gagal! Kapasitas kelas tidak mencukupi.',
+            'sisa_kuota' => $kelas->kapasitas_jumlah - $jumlahPesertaSaatIni
+        ], 400);
+    }
+
+    // 4. Filter data duplikat (Mencegah mahasiswa yang sama masuk 2x ke kelas ini)
+    $mahasiswaSudahAda = PesertaKelas::where('kelas_id', $id)
+        ->whereIn('mahasiswa_id', $request->mahasiswa_id)
+        ->pluck('mahasiswa_id')
+        ->toArray();
+
+    // Pisahkan ID mahasiswa yang benar-benar baru (belum ada di kelas ini)
+    $mahasiswaBaru = array_diff($request->mahasiswa_id, $mahasiswaSudahAda);
+
+    // Jika ternyata semua ID yang dikirim Admin sudah ada di kelas
+    if (empty($mahasiswaBaru)) {
+        return response()->json([
+            'message' => 'Gagal ditambahkan. Semua mahasiswa yang dipilih sudah terdaftar di kelas ini.'
+        ], 422);
+    }
+
+    // 5. Siapkan array untuk Bulk Insert (agar lebih cepat dan ringan di database)
+    $dataInsert = [];
+    foreach ($mahasiswaBaru as $mhs_id) {
+        $dataInsert[] = [
+            'kelas_id'     => $id,
+            'mahasiswa_id' => $mhs_id,
+            'created_at'   => now(),
+            'updated_at'   => now(),
+        ];
+    }
+
+    // Eksekusi simpan ke database melalui Model PesertaKelas
+    PesertaKelas::insert($dataInsert);
+
+    // 6. Kembalikan response yang informatif
+    return response()->json([
+        'message' => count($mahasiswaBaru) . ' mahasiswa baru berhasil dimasukkan ke dalam kelas.',
+        'total_peserta_sekarang' => PesertaKelas::where('kelas_id', $id)->count(),
+        'mahasiswa duplikat' => count($mahasiswaSudahAda) 
+    ], 201);
+}
 }

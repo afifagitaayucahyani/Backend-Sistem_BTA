@@ -6,45 +6,64 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use App\Models\Mahasiswa;
 
 class LoginController extends Controller
 {
     public function login(Request $request)
     {
-        // validasi form
-        $validator = Validator::make($request->all(), [
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
-        // kembalikan pesan error jika validasi gagal
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
+        // 1. Validasi form (Ubah 'email' menjadi 'login')
+    $validator = Validator::make($request->all(), [
+        'login'    => 'required|string', 
+        'password' => 'required',
+    ]);
+    
+    // Kembalikan pesan error jika validasi gagal
+    if ($validator->fails()) {
+        return response()->json($validator->errors(), 422);
+    }
 
-        // cari user berdasarkan input
-        $user = User::where('email', $request->email)->first();
+    $loginInput = $request->login;
+    $user = null;
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'message' => 'Nim/Email atau password yang anda masukkan salah'
-                ], 401);
-        }
+    // 2. Cek apakah input adalah NIM Mahasiswa
+    $mahasiswa = Mahasiswa::where('nim', $loginInput)->first();
 
-        // ambil data dari role
-        $role = $user->getRoleNames()->first();
+    if ($mahasiswa) {
+        // JIKA KETEMU: Ambil data User berdasarkan user_id dari tabel mahasiswa
+        $user = User::find($mahasiswa->user_id);
+    } else {
+        // JIKA TIDAK KETEMU: Cek apakah inputnya berupa email atau name
+        $fieldType = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'name';
+        
+        // Cari user berdasarkan email atau name
+        $user = User::where($fieldType, $loginInput)->first();
+    }
 
-        $token = $user->createToken('auth_token')->plainTextToken;
-
+    // 3. Pengecekan User dan Password (menggunakan gaya kodemu)
+    if (!$user || !Hash::check($request->password, $user->password)) {
         return response()->json([
-            'message' => 'Login berhasil',
-            'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $role
-            ]
-        ], 200);
+            'message' => 'Nim/Email atau password yang anda masukkan salah'
+        ], 401);
+    }
+
+    // 4. Ambil data dari role (Menggunakan Spatie)
+    $role = $user->getRoleNames()->first();
+
+    // 5. Buat Token Sanctum
+    $token = $user->createToken('auth_token')->plainTextToken;
+
+    // 6. Return response sukses dengan format JSON milikmu
+    return response()->json([
+        'message' => 'Login berhasil',
+        'token'   => $token,
+        'user'    => [
+            'id'    => $user->id,
+            'name'  => $user->name,
+            'email' => $user->email,
+            'role'  => $role
+        ]
+    ], 200);
     }
 
     // logout user
