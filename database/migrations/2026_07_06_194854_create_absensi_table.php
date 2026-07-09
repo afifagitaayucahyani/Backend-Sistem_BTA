@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('absensi', function (Blueprint $table) {
             $table->id();
             $table->foreignId('kelas_id')->constrained('kelas_mq')->restrictOnDelete();
-            $table->foreignId('mahasiswa_id')->constrained('mahasiswa')->restrictOnDelete();
-            $table->foreignId('tutor_id')->constrained('users')->restrictOnDelete();
+            $table->foreignId('mahasiswa_id')-> nullable()->constrained('mahasiswa')->restrictOnDelete();
+            $table->foreignId('tutor_id')->nullable()->constrained('users')->restrictOnDelete();
             $table->dateTime('tanggal_absensi');
-            $table->enum('status_absensi', ['Hadir', 'Izin', 'Sakit', 'Alfa']);
+            $table->enum('status_absensi', ['Hadir', 'Izin', 'Sakit', 'Alpa']);
             $table->boolean('is_valid')->default(true);
             $table->timestamps();
         });

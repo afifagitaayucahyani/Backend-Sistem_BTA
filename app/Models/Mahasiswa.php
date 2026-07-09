@@ -42,5 +42,8 @@ class Mahasiswa extends Model
         return $this->hasOne(Sertifikat::class);
     }
 
-
+    public function tesPenempatan()
+    {
+        return $this->hasOne(TesPenempatan::class); 
+    }
 }

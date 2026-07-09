@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('mahasiswa_id')->constrained('mahasiswa')->restrictOnDelete();
             $table->foreignId('admin_id')->constrained('users')->restrictOnDelete();
             $table->unsignedTinyInteger('nilai_tes');
-            $table->enum('hasil_tingkat', ['Menegah', 'Mahir']);
+            $table->enum('hasil_tingkat', ['Menengah', 'Mahir']);
             $table->timestamps();
         });
     }
