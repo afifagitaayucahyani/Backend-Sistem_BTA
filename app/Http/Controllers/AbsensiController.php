@@ -29,7 +29,7 @@ class AbsensiController extends Controller
         $mahasiswaId = null;
         $tutorId = null;
 
-        // --- SKENARIO 1: MAHASISWA ABSEN MANDIRI ---
+        // --- MAHASISWA ABSEN MANDIRI ---
         if ($user->hasRole('Mahasiswa')) {
             $profilMhs = Mahasiswa::where('user_id', $user->id)->first();
             
@@ -47,7 +47,7 @@ class AbsensiController extends Controller
                 return response()->json(['message' => 'Anda tidak terdaftar di kelas ini.'], 403);
             }
         } 
-        // --- SKENARIO 2 & 3: TUTOR YANG MENGAKSES ---
+        // --- TUTOR YANG MENGAKSES ---
         else if ($user->hasRole('Tutor')) {
             // Validasi: Pastikan tutor ini memang pengajar di kelas tersebut
             $cekKelas = KelasMq::where('id', $request->kelas_id)->where('tutor_id', $user->id)->exists();
@@ -56,11 +56,11 @@ class AbsensiController extends Controller
             }
 
             if ($request->filled('mahasiswa_id')) {
-                // Skenario 3: Tutor absenkan mahasiswa manual
+                //  Tutor absenkan mahasiswa manual
                 $mahasiswaId = $request->mahasiswa_id;
                 $tutorId = $user->id; 
             } else {
-                // Skenario 2: Tutor absen mandiri (mencatat dirinya hadir mengajar)
+                //  Tutor absen mandiri (mencatat dirinya hadir mengajar)
                 $tutorId = $user->id;
                 $mahasiswaId = null; 
             }

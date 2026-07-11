@@ -14,15 +14,27 @@ class UserController extends Controller
      * Display a listing of the resource.
      */
     // menampilkan daftar akun user
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::whereHas('roles', function ($query) {
-            $query->where('name', '!=', 'Mahasiswa');
-        })->with('roles')->get();
+        $aktor = $request->user();
+
+        $query = User::with('roles')->whereHas('roles', function ($q) {
+            $q->where('name', '!=', 'Mahasiswa');
+        });
+
+        // Jika yang mengakses BUKAN Kepala Pusat (berarti Admin/Staff), 
+        // filter data HANYA untuk menampilkan Tutor saja.
+        if (!$aktor->hasRole('Kepala Pusat')) {
+            $query->whereHas('roles', function ($q) {
+                $q->where('name', 'Tutor');
+            });
+        }
+
+        $users = $query->get();
 
         return response()->json([
-            'message' => 'Daftar akun user',
-            'data' => $users
+            'message' => 'Daftar pengguna berhasil diambil',
+            'data'    => $users
         ], 200);
     }
 
@@ -39,11 +51,19 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
+        $aktor = $request->user();
+
+        // Tentukan Role apa saja yang boleh dibuat berdasarkan jabatan Aktor
+        $allowedRoles = $aktor->hasRole('Kepala Pusat') 
+            ? ['Super Admin', 'Staff', 'Tutor', 'Rektorat'] 
+            : ['Tutor'];
+
         $validator = Validator::make($request->all(), [
             'name'     => 'required|string|max:255',
             'email'    => 'required|string|unique:users,email',
             'password' => 'required|string|min:6',
-            'role'     => 'required|string|in:Kepala Pusat,Admin,Tutor,Rektorat' 
+            // Validasi dinamis: menolak jika Admin mencoba membuat akun Rektorat/Kepala Pusat
+            'role'     => 'required|string|in:' . implode(',', $allowedRoles) 
         ]);
 
         if ($validator->fails()) {
@@ -60,7 +80,7 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Akun pengguna berhasil dibuat',
-            'data' => $user->load('roles')
+            'data'    => $user->load('roles')
         ], 201);
     }
 
@@ -83,72 +103,86 @@ class UserController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        $user = User::find($id);
+        $targetUser = User::find($id);
+        $aktor = $request->user();
 
-        if (!$user) {
-            return response()->json([
-                'message' => 'Akun pengguna tidak ditemukan'
-            ], 404);
+        if (!$targetUser) {
+            return response()->json(['message' => 'Pengguna tidak ditemukan'], 404);
         }
 
-        // validasi email boleh sama dengan emailnya sendiri, tapi tidak boleh sama dengan email user lain
+        // --- PROTEKSI KEAMANAN EDIT ---
+        if (!$aktor->hasRole('Kepala Pusat')) {
+            // Admin tidak boleh mengedit akun selain Tutor
+            if (!$targetUser->hasRole('Tutor')) {
+                return response()->json(['message' => 'Akses ditolak. Anda hanya berhak mengubah data Tutor.'], 403);
+            }
+            $allowedRoles = ['Tutor'];
+        } else {
+            $allowedRoles = ['Super Admin', 'Staff', 'Tutor', 'Rektorat'];
+        }
+
         $validator = Validator::make($request->all(), [
             'name'     => 'required|string|max:255',
             'email'    => 'required|string|unique:users,email,' . $id,
-            'role'     => 'required|string|in:Super Admin,Kepala Pusat,Staff,Tutor,Rektorat'
+            'role'     => 'required|string|in:' . implode(',', $allowedRoles)
         ]);
-        
+
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        // update profil
-        $user->name = $request->name;
-        $user->email = $request->email;
+        $targetUser->name = $request->name;
+        $targetUser->email = $request->email;
 
-        // cek jika passwrod diubah
         if ($request->filled('password')) {
-            $user->password = Hash::make($request->password);
+            $targetUser->password = Hash::make($request->password);
         }
 
-        $user->save();
-
-        // update role
-        $user->syncRoles([$request->role]);
+        $targetUser->save();
+        $targetUser->syncRoles([$request->role]);
 
         return response()->json([
-            'message' => 'Akun pengguna berhasil diperbarui',
-            'data' => $user->load('roles')
+            'message' => 'Data pengguna berhasil diperbarui',
+            'data'    => $targetUser->load('roles')
         ], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, $id)
     {
-        $user = User::find($id);
+        $targetUser = User::find($id);
+        $aktor = $request->user();
 
-        if (!$user) {
-            return response()->json([
-                'message' => 'Akun pengguna tidak ditemukan'
-            ], 404);
+        if (!$targetUser) {
+            return response()->json(['message' => 'Pengguna tidak ditemukan'], 404);
         }
 
-        // mencegah user menghapus akun sendiri
-        if ($user->hasRole('Kepala Pusat')) {
-            return response()->json([
-                'message' => 'Akun tidak dapat di hapus dari sistem'
-            ], 403);
+        // --- PROTEKSI KEAMANAN HAPUS ---
+        // 1. Cegah siapapun menghapus dirinya sendiri
+        if ($targetUser->id === $aktor->id) {
+            return response()->json(['message' => 'Anda tidak bisa menghapus akun Anda sendiri.'], 403);
         }
 
-        // hapus akun
-        $user->delete();
+        // 2. Batasan wewenang hapus
+        if (!$aktor->hasRole('Kepala Pusat')) {
+            if (!$targetUser->hasRole('Tutor')) {
+                return response()->json(['message' => 'Akses ditolak. Anda hanya berhak menghapus data Tutor.'], 403);
+            }
+        } else {
+            // Walaupun Kepala Pusat, tetap dicegah menghapus Super Admin Utama (opsional, sebagai pengaman ganda)
+            if ($targetUser->hasRole('Super Admin')) {
+                return response()->json(['message' => 'Akun Super Admin tidak boleh dihapus secara sistem.'], 403);
+            }
+        }
+
+        $targetUser->delete();
 
         return response()->json([
-            'message' => 'Akun pengguna berhasil dihapus'
+            'message' => 'Akun berhasil dihapus dari sistem.'
         ], 200);
     }
 }

@@ -125,9 +125,53 @@ class MahasiswaController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $mahasiswa = Mahasiswa::find($id);
+
+        if (!$mahasiswa) {
+            return response()->json(['message' => 'Data mahasiswa tidak ditemukan.'], 404);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name'          => 'required|string|max:255',
+            'nim'           => 'required|string|max:50|unique:mahasiswa,nim,' . $id, // Abaikan pengecekan unik untuk ID diri sendiri
+            'program_studi' => 'required|string|max:100',
+            'fakultas'      => 'required|string|max:100',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json($validator->errors(), 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            // Update data di tabel profil akademik
+            $mahasiswa->nim = $request->nim;
+            $mahasiswa->program_studi = $request->program_studi;
+            $mahasiswa->fakultas = $request->fakultas;
+            $mahasiswa->save();
+
+            // Update nama asli di tabel users login
+            $user = User::find($mahasiswa->user_id);
+            if ($user) {
+                $user->name = $request->name;
+                // Jika NIM berubah, sesuaikan juga email login-nya agar tetap konsisten
+                $user->email = $request->nim . '@student.bta.com';
+                $user->save();
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Data identitas mahasiswa berhasil diperbarui.',
+                'data'    => $mahasiswa->load('user')
+            ], 200);
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['message' => 'Gagal memperbarui data.', 'error' => $e->getMessage()], 500);
+        }
     }
 
     /**

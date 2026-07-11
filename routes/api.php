@@ -33,10 +33,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // rute untuk kepala pusat
     Route::middleware('role:Kepala Pusat')->group(function () {
-        Route::get('/users', [UserController::class, 'index']);
-        Route::post('/users', [UserController::class, 'store']);
-        Route::put('/users/{id}', [UserController::class, 'update']);
-        Route::delete('/users/{id}', [UserController::class, 'destroy']);
         Route::put('/admin/nilai/sahkan/{kelas_id}', [NilaiController::class, 'sahkanNilai']);
     });
 
@@ -55,7 +51,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // rute untuk tutor
     Route::middleware('role:Tutor')->group(function () {
-        Route::get('/tutor/kelas-ku', [KelasController::class, 'kelasKu']);
+         Route::get('/tutor/kelas-ku', [KelasController::class, 'kelasKu']);
         Route::put('/absensi/{id}/anulir', [AbsensiController::class, 'anulirKehadiran']);
         Route::get('/tutor/nilai/template/{kelas_id}', [NilaiController::class, 'downloadTemplate']);
         Route::post('/tutor/nilai/upload', [NilaiController::class, 'uploadNilai']);
@@ -63,16 +59,21 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // rute untuk admin
     Route::middleware('role:Admin')->group(function () {
+        Route::post('/admin/tes-penempatan/input-nilai', [TesPenempatanController::class, 'inputNilai']);
         Route::get('/admin/antrean-slip', [AdministrasiController::class, 'getDaftarAntrean']);
         Route::put('/admin/validasi-slip/{id}', [AdministrasiController::class, 'validasiSlip']);
         Route::get('/admin/nilai/antrean', [NilaiController::class, 'getAntreanValidasi']);
         Route::put('/admin/nilai/validasi-staff/{kelas_id}', [NilaiController::class, 'validasiTahapSatu']);
         Route::post('/admin/sertifikat/template', [SertifikatController::class, 'uploadTemplate']);
         Route::post('/admin/kelas', [KelasController::class, 'store']);
+        Route::get('/admin/kelas', [KelasController::class, 'index']);
+        Route::get('/kelas/{id}/detail', [KelasController::class, 'detailKelas']); 
+        Route::post('/admin/kelas/{id}/plot-tutor', [KelasController::class, 'plotTutor']);
         Route::post('/admin/kelas/{id}/tambah-peserta', [KelasController::class, 'tambahPeserta']);
         // data mahasiswa
-        Route::get('/admin/mahasiswa', [MahasiswaController::class, 'index']);               
-        Route::post('/admin/mahasiswa', [MahasiswaController::class, 'store']);         
+         Route::get('/admin/mahasiswa', [MahasiswaController::class, 'index']);               
+        Route::post('/admin/mahasiswa', [MahasiswaController::class, 'store']);  
+        Route::put('/admin/mahasiswa/{id}', [MahasiswaController::class, 'update']);       
         Route::delete('/admin/mahasiswa/{id}', [MahasiswaController::class, 'destroy']); 
         // periode  akademik
         Route::get('/admin/periode', [PeriodeAkademikController::class, 'index']);
@@ -83,19 +84,15 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // rute untuk admin dan kepala pusat
     Route::middleware('role:Admin|Kepala Pusat')->group(function () {
-        Route::get('/admin/tes-penempatan/belum-tes', [TesPenempatanController::class, 'index']);
-        Route::post('/admin/tes-penempatan/input-nilai', [TesPenempatanController::class, 'inputNilai']);
-        Route::get('/admin/kelas', [KelasController::class, 'index']);
-        Route::put('/admin/kelas/{id}/plot-tutor', [KelasController::class, 'plotTutor']);
+        Route::get('/users', [UserController::class, 'index']);
+        Route::post('/users', [UserController::class, 'store']);
+        Route::put('/users/{id}', [UserController::class, 'update']);
+        Route::delete('/users/{id}', [UserController::class, 'destroy']);
+        
     });
 
-    // route admin, kepala pusat dan tutor
-    Route::middleware('role:Admin|Super Admin|Tutor')->group(function () {
-    Route::get('/kelas/{id}/detail', [KelasController::class, 'detailKelas']); 
-});
 
-
-    // rute untuk rektorat
+    // rute untuk rektorat dan kepala pusat
     Route::middleware('role:Rektorat|Kepala Pusat')->group(function () {
         Route::get('/admin/laporan/statistik', [LaporanController::class, 'statistikDashboard']);
         Route::get('/admin/laporan/akademik', [LaporanController::class, 'laporanAkademik']);

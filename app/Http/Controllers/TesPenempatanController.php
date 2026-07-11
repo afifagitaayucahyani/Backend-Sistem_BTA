@@ -11,16 +11,7 @@ class TesPenempatanController extends Controller
 {
     public function index()
     {
-        // Eloquent 'whereDoesntHave' akan memfilter tabel mahasiswa
-        // dan HANYA mengambil mereka yang datanya belum ada di tabel 'tes_penempatan'
-        $mahasiswaBelumTes = Mahasiswa::whereDoesntHave('tesPenempatan')
-            ->with('user:id,name,email')
-            ->get();
-
-        return response()->json([
-            'message' => 'Daftar mahasiswa yang belum mengikuti tes berhasil diambil.',
-            'data'    => $mahasiswaBelumTes
-        ], 200);
+        // 
     }
 
     public function inputNilai(Request $request)

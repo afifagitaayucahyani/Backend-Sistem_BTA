@@ -13,7 +13,7 @@ class KelasController extends Controller
     // kelas
     // aktor admin dan kepala pusat
     public function index()
-    {
+    {{
         // Menarik semua data kelas beserta nama tutor yang mengajar
         $kelas = KelasMq::with('tutor:id,name,email')->latest()->get();
 
@@ -21,7 +21,7 @@ class KelasController extends Controller
             'message' => 'Daftar semua kelas berhasil diambil.',
             'data'    => $kelas
         ], 200);
-    }
+    }}
 
     public function store(Request $request)
     {

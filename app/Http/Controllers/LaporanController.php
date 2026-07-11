@@ -90,7 +90,7 @@ class LaporanController extends Controller
 
         // Replikasi logika filter dari laporanAkademik
         $query = NilaiAkhir::with(['mahasiswa.user', 'kelas'])
-                           ->where('status_validasi', 'Disahkan Pusat');
+                           ->where('status_validasi', 2);
 
         if ($request->filled('fakultas')) {
             $query->whereHas('mahasiswa', function ($q) use ($request) {
