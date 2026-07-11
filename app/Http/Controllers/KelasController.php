@@ -27,7 +27,7 @@ class KelasController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'nama_kelas' => 'required|string|max:100', 
-            'tingkat'    => 'required|in:Menengah,Mahir', 
+            'tingkat'    => 'required|in:Menegah,Mahir', 
             'kapasitas_jumlah'=> 'required|integer|min:1|max:50',
             'periode_id' => 'required|exists:periode_akademik,id',
             'jadwal'     => 'nullable|string' 

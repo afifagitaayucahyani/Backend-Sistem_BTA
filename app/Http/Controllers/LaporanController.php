@@ -57,7 +57,7 @@ class LaporanController extends Controller
     {
         // Mulai merangkai Query (Hanya ambil data yang sudah final disahkan)
         $query = NilaiAkhir::with(['mahasiswa.user:id,name,email', 'kelas:id,nama_kelas,tingkat'])
-                           ->where('status_validasi', 'Disahkan Pusat');
+                           ->where('status_validasi', 2);
 
         // Filter dinamis berdasarkan Fakultas (jika dikirim dari React)
         if ($request->filled('fakultas')) {

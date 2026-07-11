@@ -55,7 +55,7 @@ class UserController extends Controller
 
         // Tentukan Role apa saja yang boleh dibuat berdasarkan jabatan Aktor
         $allowedRoles = $aktor->hasRole('Kepala Pusat') 
-            ? ['Super Admin', 'Staff', 'Tutor', 'Rektorat'] 
+            ? ['Kepala Pusat', 'Admin', 'Tutor', 'Rektorat'] 
             : ['Tutor'];
 
         $validator = Validator::make($request->all(), [
@@ -120,7 +120,7 @@ class UserController extends Controller
             }
             $allowedRoles = ['Tutor'];
         } else {
-            $allowedRoles = ['Super Admin', 'Staff', 'Tutor', 'Rektorat'];
+            $allowedRoles = ['Kepala Pusat', 'Admin', 'Tutor', 'Rektorat'];
         }
 
         $validator = Validator::make($request->all(), [

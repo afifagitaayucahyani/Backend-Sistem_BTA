@@ -78,7 +78,8 @@ class NilaiController extends Controller
                         'total_nilai'       => $poin,
                         'huruf_mutu'       => $hurufMutu,
                         'status_validasi'  => 0,
-                        'status_kelulusan' => 'Lulus' 
+                        'status_kelulusan' => $poin >= 69 ? 'Lulus' : 'Tidak Lulus',
+                        
                     ]
                 );
             }
@@ -172,8 +173,8 @@ class NilaiController extends Controller
                         'nomor_sk'         => $nomorSkAktif,
                         'nama_mahasiswa'   => $namaMahasiswa,
                         'nim'              => $nimMahasiswa,
-                        'total_nilai'       => $nilai->total_poin,
-                        'keterangan_huruf' => $nilai->huruf_mutu,
+                        'total_nilai'       => $nilai->total_nilai,
+                        'keterangan_huruf_mutu' => $nilai->huruf_mutu,
                         'template_base64'  => $base64Template
                     ];
 
@@ -194,7 +195,7 @@ class NilaiController extends Controller
                         [
                             'nomor_sk'          => $nomorSkAktif, 
                             'keterangan_nilai_total'    => $nilai->total_nilai,
-                            'keterangan_huruf'          => $nilai->huruf_mutu,
+                            'keterangan_huruf_mutu'          => $nilai->huruf_mutu,
                             'file_sertifikat'           => $jalurPenyimpanan,
                         ]
                     );

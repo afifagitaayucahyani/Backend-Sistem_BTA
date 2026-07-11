@@ -48,7 +48,7 @@ class SertifikatController extends Controller
             'message' => 'Status kelulusan berhasil diambil.',
             'data'    => [
                 'kelas'            => $nilai->kelas->nama_kelas,
-                'total_nilai'       => $nilai->total_poin,
+                'total_nilai'       => $nilai->total_nilai,
                 'huruf_mutu'       => $nilai->huruf_mutu,
                 'status_kelulusan' => $nilai->status_kelulusan,
                 'pesan'            => $pesanKelulusan
@@ -90,8 +90,8 @@ class SertifikatController extends Controller
             'download_url' => $urlFile,
             'data_dokumen' => [
                 'nomor_sk' => $sertifikat->nomor_sk,
-                'keterangan_nilai' => $sertifikat->keterangan_nilai_total,
-                'keterangan_huruf' => $sertifikat->keterangan_huruf,
+                'keterangan_nilai_total' => $sertifikat->keterangan_nilai_total,
+                'keterangan_huruf_mutu' => $sertifikat->keterangan_huruf_mutu,
             ]
         ], 200);
     }
