@@ -54,13 +54,16 @@ class LoginController extends Controller
     // Wajib: Regenerate session untuk mengunci cookie secara aman
     $request->session()->regenerate();
 
+    // Buat token Sanctum agar mendukung lintas domain (Vercel Frontend <-> cPanel Backend)
+    $token = $user->createToken('auth_token')->plainTextToken;
+
     // ==========================================
 
     // 5. Ambil data dari role (Menggunakan Spatie)
     $role = $user->getRoleNames()->first();
 
-    // 6. Return response sukses 
-    // HAPUS bagian 'token' karena SPA Sanctum mengandalkan Cookie secara gaib (otomatis)
+    // 6. Return response sukses dengan token & user
+
     return response()->json([
         'message' => 'Login berhasil',
         'user'    => [
@@ -75,11 +78,17 @@ class LoginController extends Controller
     // logout user
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        if ($request->user() && $request->user()->currentAccessToken()) {
+            $request->user()->currentAccessToken()->delete();
+        }
 
         return response()->json([
             'message' => 'Logout berhasil'
-        ], 204);
+        ], 200);
     }
 
     // ambil data user yang sedang login
