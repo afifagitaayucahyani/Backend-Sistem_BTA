@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Mahasiswa;
 
@@ -48,15 +49,20 @@ class LoginController extends Controller
     }
 
     // 4. Ambil data dari role (Menggunakan Spatie)
+    Auth::login($user);
+    
+    // Wajib: Regenerate session untuk mengunci cookie secara aman
+    $request->session()->regenerate();
+
+    // ==========================================
+
+    // 5. Ambil data dari role (Menggunakan Spatie)
     $role = $user->getRoleNames()->first();
 
-    // 5. Buat Token Sanctum
-    $token = $user->createToken('auth_token')->plainTextToken;
-
-    // 6. Return response sukses dengan format JSON milikmu
+    // 6. Return response sukses 
+    // HAPUS bagian 'token' karena SPA Sanctum mengandalkan Cookie secara gaib (otomatis)
     return response()->json([
         'message' => 'Login berhasil',
-        'token'   => $token,
         'user'    => [
             'id'    => $user->id,
             'name'  => $user->name,
