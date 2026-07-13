@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Models\Mahasiswa;
 
@@ -48,12 +49,20 @@ class LoginController extends Controller
     }
 
     // 4. Ambil data dari role (Menggunakan Spatie)
-    $role = $user->getRoleNames()->first();
+    Auth::login($user);
+    
+    // Wajib: Regenerate session untuk mengunci cookie secara aman
+    $request->session()->regenerate();
 
-    // 5. Buat Token Sanctum
+    // Buat token Sanctum agar mendukung lintas domain (Vercel Frontend <-> cPanel Backend)
     $token = $user->createToken('auth_token')->plainTextToken;
 
-    // 6. Return response sukses dengan format JSON milikmu
+    // ==========================================
+
+    // 5. Ambil data dari role (Menggunakan Spatie)
+    $role = $user->getRoleNames()->first();
+
+    // 6. Return response sukses dengan token & user
     return response()->json([
         'message' => 'Login berhasil',
         'token'   => $token,
@@ -69,11 +78,17 @@ class LoginController extends Controller
     // logout user
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        if ($request->user() && $request->user()->currentAccessToken()) {
+            $request->user()->currentAccessToken()->delete();
+        }
 
         return response()->json([
             'message' => 'Logout berhasil'
-        ], 204);
+        ], 200);
     }
 
     // ambil data user yang sedang login
