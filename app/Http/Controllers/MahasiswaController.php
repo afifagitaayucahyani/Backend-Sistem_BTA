@@ -206,4 +206,31 @@ class MahasiswaController extends Controller
             return response()->json(['message' => 'Gagal menghapus data. Kemungkinan data ini sudah terikat dengan riwayat absensi/nilai kelas.', 'error' => $e->getMessage()], 500);
         }
     }
+
+    public function getMahasiswaTersedia(Request $request)
+    {
+        // Mendapatkan "Mahir" atau "Menengah" dari Front-End
+        $tingkat = $request->query('tingkat'); 
+
+        // Validasi input tingkat
+        if (!$tingkat) {
+            return response()->json(['message' => 'Parameter tingkat wajib diisi.'], 400);
+        }
+
+        // Mengambil mahasiswa berdasarkan hasil tes penempatan
+        $mahasiswaTersedia = Mahasiswa::whereHas('tesPenempatan', function($query) use ($tingkat) {
+            // Pastikan 'hasil_tingkat' sesuai dengan nama kolom di database kamu
+            $query->where('hasil_tingkat', $tingkat);
+        })
+        // Memastikan mahasiswa belum tergabung di kelas periode aktif
+        ->whereDoesntHave('kelas_mq') 
+        // Bawa data nama dari tabel user dan nilai dari tabel tes penempatan
+        ->with(['user:id,name', 'tesPenempatan:id,mahasiswa_id,nilai_tes,hasil_tingkat']) 
+        ->get();
+
+        return response()->json([
+            'message' => 'Data mahasiswa tersedia berhasil diambil',
+            'data' => $mahasiswaTersedia
+        ], 200);
+    }
 }

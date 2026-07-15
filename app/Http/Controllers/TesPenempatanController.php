@@ -4,14 +4,48 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use App\Models\Mahasiswa;
 use App\Models\TesPenempatan;
+use App\Models\Mahasiswa;
 
 class TesPenempatanController extends Controller
 {
     public function index()
     {
         // 
+    }
+
+    public function getBelumTes()
+    {
+        try {
+            // 1. Ambil mahasiswa yang TIDAK PUNYA relasi di tabel tes_penempatan
+            // 2. Gunakan with('user') agar nama mahasiswa ikut ditarik (mencegah N+1 Query Problem)
+            $mahasiswaBelumTes = Mahasiswa::with('user')
+                                          ->doesntHave('tesPenempatan')
+                                          ->get();
+
+            // 3. (Opsional tapi Direkomendasikan) Format ulang data agar lebih rapi saat diterima React
+            $formattedData = $mahasiswaBelumTes->map(function ($mhs) {
+                return [
+                    'id'            => $mhs->id,           // ID dari tabel mahasiswa (penting untuk parameter simpan)
+                    'nim'           => $mhs->nim,
+                    'nama'          => $mhs->user ? $mhs->user->name : 'Nama tidak ditemukan', 
+                    'program_studi' => $mhs->program_studi,
+                    'fakultas'      => $mhs->fakultas,
+                ];
+            });
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Data mahasiswa yang belum tes berhasil diambil',
+                'data'    => $formattedData
+            ], 200);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal mengambil data: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     public function inputNilai(Request $request)

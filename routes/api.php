@@ -59,6 +59,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // rute untuk admin
     Route::middleware('role:Admin')->group(function () {
+        Route::get('/admin/tes-penempatan/belum-tes', [TesPenempatanController::class, 'getBelumTes']);
         Route::post('/admin/tes-penempatan/input-nilai', [TesPenempatanController::class, 'inputNilai']);
         Route::get('/admin/antrean-slip', [AdministrasiController::class, 'getDaftarAntrean']);
         Route::put('/admin/validasi-slip/{id}', [AdministrasiController::class, 'validasiSlip']);
@@ -73,7 +74,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin/mahasiswa', [MahasiswaController::class, 'index']);               
         Route::post('/admin/mahasiswa', [MahasiswaController::class, 'store']);  
         Route::put('/admin/mahasiswa/{id}', [MahasiswaController::class, 'update']);       
-        Route::delete('/admin/mahasiswa/{id}', [MahasiswaController::class, 'destroy']); 
+        Route::delete('/admin/mahasiswa/{id}', [MahasiswaController::class, 'destroy']);
+        Route::get('/admin/mahasiswa/tersedia', [MahasiswaController::class, 'getMahasiswaTersedia']);
         // periode  akademik
         Route::get('/admin/periode', [PeriodeAkademikController::class, 'index']);
         Route::post('/admin/periode', [PeriodeAkademikController::class, 'store']);
